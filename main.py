@@ -54,19 +54,24 @@ def handle_user_input(user_query):
 def main():
     load_dotenv()
 
-    st.set_page_config(page_title="Chat with multiple PDFs", page_icon=":books:")
-    st.header("Chat with multiple PDFs :books:")
+    st.set_page_config(page_title="Parler a vos PDFs", page_icon=":books:")
+    st.header("Parler a vos PDFs :books:")
+
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
-            AIMessage(content="Hello, I am a bot. How can I help you?"),
+            AIMessage(content="Salut, comment puis-je vous aider?"),
         ]
+    if "state" not in st.session_state:
+        st.session_state.state = False
     with st.sidebar:
-        st.subheader("Your documents")
-        pdf_docs = st.file_uploader("Upload your PDFs here and click 'process'", type="pdf", accept_multiple_files=True)
+        st.subheader("Vos documents")
+        pdf_docs = st.file_uploader("Televerser vos pdf puis cliquer sur 'process'", type="pdf",
+                                    accept_multiple_files=True)
+
         if st.button("Process"):
-            with st.spinner("Processing"):
+            with st.spinner("Patienter"):
                 # get the pdfs texts
                 raw_text = get_pdf_text(pdf_docs)
                 # get the text chunks
@@ -75,18 +80,21 @@ def main():
                 vectorstore = get_vector_store(text_chunks)
                 # conversation chain
                 st.session_state.conversation = get_conversation_chain(vectorstore)
+                st.session_state.state = True
 
-    user_query = st.chat_input("Ask your question:")
-
-    if user_query is not None and user_query != "":
-        handle_user_input(user_query)
-    for message in st.session_state.chat_history:
-        if isinstance(message, HumanMessage):
-            with st.chat_message("Human"):
-                st.markdown(message.content)
-        if isinstance(message, AIMessage):
-            with st.chat_message("AI"):
-                st.markdown(message.content)
+    if st.session_state.state:
+        user_query = st.chat_input("Ask your question:")
+        if user_query is not None and user_query != "":
+            handle_user_input(user_query)
+        for message in st.session_state.chat_history:
+            if isinstance(message, HumanMessage):
+                with st.chat_message("Human"):
+                    st.markdown(message.content)
+            if isinstance(message, AIMessage):
+                with st.chat_message("AI"):
+                    st.markdown(message.content)
+    else:
+        st.info("Veuiller televerser vos PDFs")
 
 
 if __name__ == '__main__':
